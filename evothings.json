@@ -1,0 +1,32 @@
+{
+  "name": "modified-sensors",
+  "version": "1.1.0",
+  "title": "FPV Drone App",
+  "description": "Analyse FPV freestyle with the SensorTag.",
+  "tags": [
+    {
+      "label": "ti-sensortag",
+      "type": "platform"
+    },
+    {
+      "label": "ble",
+      "type": "comm"
+    }
+  ],
+  "libraries": [],
+  "plugins": [
+    {
+      "name": "cordova-plugin-ble",
+      "version": "2.0.0"
+    }
+  ],
+  "index-file": "index.html",
+  "uuid": "8a0de8fa-d2bd-49d9-a0df-acb8414a124f",
+  "icon": "image.png",
+  "doc-url": "http://evothings.com/2.2/doc/examples/ble-ti-sensortag-sensors.html",
+  "long-description": "This app displays all the sensors available in the TI BLE SensorTags.",
+  "cordova-id": "com.evothings.examples.bletisensortagsensors",
+  "author-name": "Evothings",
+  "author-email": "build@evothings.com",
+  "author-url": "https://evothings.com"
+}

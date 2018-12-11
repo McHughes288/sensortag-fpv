@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<!--
+	Demonstration of the TI SensorTag JavaScript library.
+-->
+<html>
+
+<head>
+	<meta charset="utf-8" />
+	<meta name="format-detection" content="telephone=no" />
+	<meta name="viewport" content="width=device-width, user-scalable=no,
+		shrink-to-fit=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0" />
+
+	<title>SensorTag FPV Drone Sensor</title>
+
+	<style>
+		@import 'ui/css/evothings-app.css';
+	</style>
+
+
+	<script>
+	// Redirect console.log to Evothings Workbench.
+	if (window.hyper && window.hyper.log) { console.log = hyper.log }
+	</script>
+
+	<script src="cordova.js"></script>
+	<script src="libs/evothings/evothings.js"></script>
+	<script src="libs/evothings/ui/ui.js"></script>
+	<script src="libs/evothings/tisensortag/tisensortag.js"></script>
+
+	<!--  Three.js for graphics-->
+	<script src="./libs/js/three.min.js"></script>
+	<script src="./libs/js/ColladaLoader.js"></script>
+	
+</head>
+
+<body>
+
+	<!-- TOP BAR -->
+	<header>
+		<button class="back" onclick="history.back()">
+			<img src="ui/images/arrow-left.svg" />
+		</button>
+		<!-- <img class="logotype" src="image.png" alt="Evothings" /> -->
+	</header>
+
+
+	<!-- INFO AND CONNECT SECTION -->
+	<h1>FPV Drone App</h1>
+
+	<img src="image.png"
+		style="float:right;width:120px;height:auto;"/>
+
+	<p>
+		Activate the <strong>TI SensorTag CC2650</strong>, strap it to your drone and press connect to begin.
+	</p>
+
+	<button onclick="connect()" class="green">
+		Connect
+	</button>
+
+	<button onclick="disconnect()" class="charcoal">
+		Disconnect
+	</button>
+
+	<p>
+		<strong>Status:</strong> <span id="StatusData">Press Connect to find the nearest SensorTag</span>
+	</p>
+
+
+	<!-- ANALYSIS SECTION -->
+	<h2>Freestyle Analysis</h2>
+
+	<p>
+		<strong>Comment:</strong> <span id="Comment">Take off and do some freestyle!</span>
+	</p>
+
+	<p>
+		<strong>Movement:</strong> <span id="Movement">None</span>
+	</p>
+
+	<script>
+	
+	// ------------------------------------------------
+	// 3D MODEL SETUP
+	// ------------------------------------------------
+
+	// Create an empty scene
+	var scene = new THREE.Scene();
+
+	// Create a basic perspective camera
+	var camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight*2, 0.1, 1000 );
+	camera.position.z = 4;
+
+	// Create a renderer with Antialiasing
+	var renderer = new THREE.WebGLRenderer({antialias:true});
+
+	// Configure renderer clear color
+	renderer.setClearColor("#ffffff");
+
+	// Configure renderer size
+	renderer.setSize( window.innerWidth*0.8, window.innerHeight*0.4);
+
+	// Append Renderer to DOM
+	document.body.appendChild( renderer.domElement );
+	
+	</script>
+
+	<h3>Angles:</h3>
+	<p>
+		<span id="Angles">[Waiting for value]</span>
+	</p>
+
+
+	<!-- SENSOR SECTION -->
+	<h2>Sensor Readings</h2>
+
+	<h3>Accelerometer:</h3>
+	<p>
+		<span id="AccelerometerData">[Waiting for value]</span>
+	</p>
+
+	<h3>Gyroscope:</h3>
+	<p>
+		<span id="GyroscopeData">[Waiting for value]</span>
+	</p>
+
+	<h3>Magnetometer:</h3>
+	<p>
+		<span id="MagnetometerData">[Waiting for value]</span>
+	</p>
+
+
+	<script>
+
+	// ------------------------------------------------
+	// INITIALISE VARIABLES
+	// ------------------------------------------------
+
+	// SensorTag object.
+	var sensortag
+	var count = 0;
+	// Define global dictionaries to contain values for x, y and z
+	var world = {}
+	var acc = {}
+	var gyro = {}
+	var accAngle = {}
+	var gyroAngle = {}
+	var total = {pitch: 0, roll: 0, yaw: 0}
+	// Gyro stats when stationary
+	var gyroMean = {x: 1.162, y: -7.959, z: -4.350}
+	var gyroSd = {x: 0.936, y: 1.345, z: 1.122}
+
+
+	// ------------------------------------------------
+	// SENSORTAG INTEGRATION
+	// ------------------------------------------------
+
+	function initialiseSensorTag()
+	{
+		// Create SensorTag CC2650 instance.
+		sensortag = evothings.tisensortag.createInstance(
+			evothings.tisensortag.CC2650_BLUETOOTH_SMART)
+
+		// Here sensors are set up.
+		sensortag
+			.statusCallback(statusHandler)
+			.errorCallback(errorHandler)
+			.keypressCallback(keypressHandler)
+			.accelerometerCallback(accelerometerHandler, 100)
+			.magnetometerCallback(magnetometerHandler, 100)
+			.gyroscopeCallback(gyroscopeHandler, 100)
+	}
+
+
+	function connect()
+	{
+		sensortag.connectToNearestDevice()
+	}
+
+
+	function disconnect()
+	{
+		sensortag.disconnectDevice()
+		resetSensorDisplayValues()
+	}
+
+
+	function statusHandler(status)
+	{
+		displayValue('StatusData', status)
+	}
+
+
+	function errorHandler(error)
+	{
+		console.log('Error: ' + error)
+
+		if (evothings.easyble.error.DISCONNECTED == error)
+		{
+			resetSensorDisplayValues()
+		}
+		else
+		{
+			displayValue('StatusData', 'Error: ' + error)
+		}
+	}
+
+
+	function resetSensorDisplayValues()
+	{
+		// Clear current values.
+		var blank = '[Waiting for value]'
+		displayValue('StatusData', 'Press Connect to find a SensorTag')
+		displayValue('AccelerometerData', blank)
+		displayValue('GyroscopeData', blank)
+		displayValue('MagnetometerData', blank)
+
+		// Reset screen color.
+		setBackgroundColor('white')
+	}
+
+
+	function keypressHandler(data)
+	{
+		// Reset drone position if button pressed
+		switch (data[0])
+		{
+			case 0:
+				setBackgroundColor('white')
+				break;
+			case 1:
+				if ( drone !== undefined ) {
+					drone.rotation.x = -Math.PI/2+Math.PI/8;
+					drone.rotation.y = 0;
+					drone.rotation.z = -Math.PI/4;
+				}
+				break;
+			case 2:
+				if ( drone !== undefined ) {
+					drone.rotation.x = -Math.PI/2+Math.PI/8;
+					drone.rotation.y = 0;
+					drone.rotation.z = -Math.PI/4;
+				}
+				break;
+			case 3:
+				setBackgroundColor('blue')
+				break;
+		}
+	}
+	
+
+	function accelerometerHandler(data)
+	{
+		// Calculate the x,y,z accelerometer values from raw data.
+		var values = sensortag.getAccelerometerValues(data)
+		var x = values.x
+		var y = values.y
+		var z = values.z
+		
+		acc = values
+
+		//logData('1', values)
+
+		// Prepare the information to display.
+		string =
+			'x: ' + (x >= 0 ? '+' : '') + x.toFixed(3) + 'G<br/>' +
+			'y: ' + (y >= 0 ? '+' : '') + y.toFixed(3) + 'G<br/>' +
+			'z: ' + (z >= 0 ? '+' : '') + z.toFixed(3) + 'G<br/>'
+		
+		// Update the value displayed.
+		if (count > 5) {
+			displayValue('AccelerometerData', string)
+		}
+	}
+
+
+	function gyroscopeHandler(data)
+	{
+		// Calculate the gyroscope values from raw sensor data.
+		var values = sensortag.getGyroscopeValues(data)
+		var x = values.x
+		var y = values.y
+		var z = values.z
+
+		gyro = values
+		
+		// Update orientation of 3D drone model
+		handleMotionEvent()
+
+		//logData('2', values)
+
+		// Prepare the information to display.
+		string =
+			'x: ' + (x >= 0 ? '+' : '') + x.toFixed(2) + '<br/>' +
+			'y: ' + (y >= 0 ? '+' : '') + y.toFixed(2) + '<br/>' +
+			'z: ' + (z >= 0 ? '+' : '') + z.toFixed(2) + '<br/>'
+
+		// Update the value displayed.
+		if (count > 5) {
+			displayValue('GyroscopeData', string)
+		}
+		
+		// OLD ALGORITHM USED
+		// if (x > 254) {
+		// 	displayValue('Comment', 'Spectacular power loop!')
+		// } if (x < -254) {
+		// 	displayValue('Comment', 'Awesome Matty flip!')
+		// } if (y > 254) {
+		// 	displayValue('Comment', 'Great left snap roll!')
+		// } if (y < -254) {
+		// 	displayValue('Comment', 'Good right snap roll!')
+		// } if (z > 254) {
+		// 	displayValue('Comment', 'Cool right yaw spin!')
+		// } if (z < -254) {
+		// 	displayValue('Comment', 'Nice left yaw spin!')
+		// }
+	}
+
+
+	function magnetometerHandler(data)
+	{
+		// Calculate the magnetometer values from raw sensor data.
+		var values = sensortag.getMagnetometerValues(data)
+		var x = values.x
+		var y = values.y
+		var z = values.z
+
+		//logData('3', values)
+
+		// Prepare the information to display.
+		string =
+			'x: ' + (x >= 0 ? '+' : '') + x.toFixed(1) + '&micro;T <br/>' +
+			'y: ' + (y >= 0 ? '+' : '') + y.toFixed(1) + '&micro;T <br/>' +
+			'z: ' + (z >= 0 ? '+' : '') + z.toFixed(1) + '&micro;T <br/>'
+
+		// Update the value displayed.
+		if (count > 5) {
+			displayValue('MagnetometerData', string)
+			count = 0
+		} else {
+			count += 1;
+		}
+		
+		
+	}
+
+	function displayValue(elementId, value)
+	{
+		document.getElementById(elementId).innerHTML = value
+	}
+
+
+	function setBackgroundColor(color)
+	{
+		document.documentElement.style.background = color
+		document.body.style.background = color
+	}
+
+
+	document.addEventListener(
+		'deviceready',
+		function() { evothings.scriptsLoaded(initialiseSensorTag) },
+		false)
+
+
+	// Function to print csv style data to terminal
+	function logData(name, values) {
+		string = name + "," + values.x + "," + values.y + "," + values.z
+		console.log(string)
+	}
+
+
+	// ------------------------------------------------
+	// 3D GRAPHICS
+	// ------------------------------------------------
+	
+	// Define axes relevant to drone model
+	var xAxis = new THREE.Vector3(1,1,0).normalize();
+	var yAxis = new THREE.Vector3(-1,1,0).normalize();
+	var zAxis = new THREE.Vector3(1,0,0).normalize();
+	
+	// Load drone model drom .dae file
+	var loader = new THREE.ColladaLoader();
+	var drone;
+	function loadCollada( collada ) {
+		drone = collada.scene;
+		scene.add(drone);
+		drone.scale.set(0.35,0.35,0.35)
+		drone.rotateZ(-Math.PI/4);
+		drone.rotateOnAxis(xAxis, Math.PI/8);
+	}
+	loader.options.convertUpAxis = true;
+	loader.load( './model/model.dae', loadCollada);
+
+	// Scene lighting
+	var ambientLight = new THREE.AmbientLight( 0xcccccc, 0.4 );
+	scene.add( ambientLight );
+	var directionalLight = new THREE.DirectionalLight( 0xffffff, 0.8 );
+	directionalLight.position.set( 1, 1, 0 ).normalize();
+	scene.add( directionalLight );
+
+
+	// Render Loop to create scene
+	var render = function () {
+		requestAnimationFrame( render );
+		renderer.render(scene, camera);
+	};
+	render();
+
+
+	// ------------------------------------------------
+	// UPDATE ORIENTATION
+	// ------------------------------------------------
+
+	// Initialise arrays
+	var acc_x_save = [];
+	var acc_y_save = [];
+	var acc_strength = [];
+	var gyro_strength = [];
+
+	
+	function handleMotionEvent() {
+		if ( drone !== undefined ) {
+			
+			// Save rotation of drone in world coordinates
+			world.x = drone.rotation.x + Math.PI/2;
+			world.y = - drone.rotation.y;
+			world.z = drone.rotation.z;
+			
+			// Triple-axis tilt calculation --> trig with accelerometer readings
+			accAngle.x = -1 * Math.atan(acc.x / Math.sqrt(Math.pow(acc.y,2)+Math.pow(acc.z,2)));
+			accAngle.y = -1 * Math.atan(acc.y / Math.sqrt(Math.pow(acc.x,2)+Math.pow(acc.z,2)));
+			acc_x_save.push(accAngle.x)
+			acc_y_save.push(accAngle.y)
+			acc_strength.push(Math.sqrt(Math.pow(acc.x,2) + Math.pow(acc.y,2) + Math.pow(acc.z,2)));
+			
+			// Angle turned in each axis --> integrate gyroscope readings
+			gyroAngle.x = 1.0 * (gyro.x - gyroMean.x) * 0.1 * Math.PI / 180;
+			gyroAngle.y = -1.0 * (gyro.y - gyroMean.y) * 0.1 * Math.PI / 180;
+			gyroAngle.z = -1.0 * (gyro.z - gyroMean.z) * 0.1 * Math.PI / 180;
+			gyro_strength.push(Math.sqrt(Math.pow(gyro.x - gyroMean.x,2) + Math.pow(gyro.y - gyroMean.y,2) + Math.pow(gyro.z - gyroMean.z,2)));
+
+			
+			// Update orientation with gyro angle
+			drone.rotateOnAxis(xAxis, gyroAngle.x); // pitch 
+			drone.rotateOnAxis(yAxis, gyroAngle.y); // roll
+			drone.rotateZ(gyroAngle.z); // yaw
+
+			
+			// Drift correction with Accelerometer data
+			if (gyro_strength.length > 5) {
+				
+				// Only keep history of 5
+				acc_x_save = acc_x_save.slice(-5);
+				acc_y_save = acc_y_save.slice(-5);
+				acc_strength = acc_strength.slice(-5);
+				gyro_strength = gyro_strength.slice(-5);
+				
+				// Check if drone is still (not accelerating or spinning harshly)
+				if (mean(acc_strength) < 0.3 && mean(gyro_strength) < 10) {
+					
+					// Update if not upside down or facing towards user (problems occur with update)
+					if (acc.z>0 && world.z < 0.436 && world.z > -1.222) {
+						// Error angle due to drift
+						var alpha_x = world.x - mean(acc_y_save);
+						var alpha_y = world.y - mean(acc_x_save);
+						
+						// Update orientation with error angle
+						drone.rotateOnAxis(xAxis, -alpha_x*0.6); // pitch 
+						drone.rotateOnAxis(yAxis, alpha_y*0.6); // roll
+					}
+					
+					// Clear arrays
+					acc_strength = [];
+					gyro_strength = [];
+					
+					// Reset angle turned
+					total = {pitch: 0, roll: 0, yaw: 0};
+					displayValue('Movement', 'None')
+				}
+			}
+			
+			// Store total angle turned
+			total.pitch += gyroAngle.x;
+			total.roll += gyroAngle.y;
+			total.yaw += gyroAngle.z;
+			string =
+				'Pitch: ' + (total.pitch >= 0 ? '+' : '') + (total.pitch*180/Math.PI).toFixed(0) + '<br/>' +
+				'Roll: ' + (total.roll >= 0 ? '+' : '') + (total.roll*180/Math.PI).toFixed(0) + '<br/>' +
+				'Yaw: ' + (total.yaw >= 0 ? '+' : '') + (total.yaw*180/Math.PI).toFixed(0) + '<br/>'
+			displayValue('Angles', string)
+
+			// 360 rotation detection for pitch
+			if (total.pitch > 1.9*Math.PI){
+				displayValue('Comment', 'Spectacular power loop!')
+				total = {pitch: 0, roll: 0, yaw: 0};
+			} else if (total.pitch < -1.9*Math.PI) {
+				displayValue('Comment', 'Awesome Matty flip!')
+				total = {pitch: 0, roll: 0, yaw: 0};
+			}
+			// 360 rotation detection for roll
+			if (total.roll > 1.9*Math.PI){
+				displayValue('Comment', 'Great right roll!')
+				total = {pitch: 0, roll: 0, yaw: 0};
+			} else if (total.roll < -1.9*Math.PI) {
+				displayValue('Comment', 'Good left roll!')
+				total = {pitch: 0, roll: 0, yaw: 0};
+			}
+			// 360 rotation detection for yaw
+			if (total.yaw > 1.9*Math.PI){
+				displayValue('Comment', 'Cool left yaw spin!')
+				total = {pitch: 0, roll: 0, yaw: 0};
+			} else if (total.yaw < -1.9*Math.PI) {
+				displayValue('Comment', 'Nice right yaw spin!')
+				total = {pitch: 0, roll: 0, yaw: 0};
+			}
+			// 180 rotation detection for pitch and roll (split S)
+			if (Math.abs(total.pitch) > 0.8*Math.PI && Math.abs(total.pitch) < 1.2*Math.PI && Math.abs(total.roll) > 0.8*Math.PI && Math.abs(total.roll) < 1.2*Math.PI){
+				displayValue('Comment', 'Insane split S!')
+				total = {pitch: 0, roll: 0, yaw: 0};
+			} 
+			
+			// Main axis of movement calculation
+			var gv = [Math.abs(gyro.x- gyroMean.x), Math.abs(gyro.y- gyroMean.y), Math.abs(gyro.z- gyroMean.z)];
+			i = indexOfMax(gv);
+			max = gv[i];
+
+			if (i===0 && max > 20) {
+				if (gyro.x - gyroMean.x > 0) {
+					displayValue('Movement', 'Backward Pitch')
+				} else {
+					displayValue('Movement', 'Forward Pitch')
+				}
+			} else if (i===1 && max > 20) {
+				if (gyro.y - gyroMean.y > 0) {
+					displayValue('Movement', 'Left Roll')
+				} else {
+					displayValue('Movement', 'Right Roll')
+				}
+			} else if (i===2 && max > 20) {
+				if (gyro.z - gyroMean.z > 0) {
+					displayValue('Movement', 'Right Yaw')
+				} else {
+					displayValue('Movement', 'Left Yaw')
+				}
+			}
+
+		}	
+	};
+
+
+	// ------------------------------------------------
+	// VECTOR FUNCTIONS
+	// ------------------------------------------------
+	
+	// Function to calculate index of maximum
+	function indexOfMax(arr) {
+		if (arr.length === 0) {
+			return -1;
+		}
+
+		var max = arr[0];
+		var maxIndex = 0;
+
+		for (var i = 1; i < arr.length; i++) {
+			if (arr[i] > max) {
+				maxIndex = i;
+				max = arr[i];
+			}
+		}
+
+		return maxIndex;
+	}
+
+	// Function to calculate mean of a vector
+	function mean(vec) {
+		var total = 0;
+		for(var i = 0; i < vec.length; i++) {
+			total += vec[i];
+		}
+		var avg = total / vec.length;
+		return avg
+	}
+	
+	</script>
+
+</body>
+
+</html>
