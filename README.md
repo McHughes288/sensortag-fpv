@@ -74,7 +74,7 @@ Install VirtualBox and extension pack [here](https://www.virtualbox.org/wiki/Dow
 * VirtualBox 5.2.22 (OS X hosts)
 * VirtualBox 5.2.22 Oracle VM VirtualBox Extension Pack (All supported platforms)
 
-Installed VM with Ubuntu image from [here](http://releases.ubuntu.com/16.04/).
+Install VM with Ubuntu image from [here](http://releases.ubuntu.com/16.04/).
 * Image: `ubuntu-16.04.5-desktop-amd64.iso`
 * Default setup with minimum of 20gb storage
 
