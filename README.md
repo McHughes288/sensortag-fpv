@@ -14,7 +14,7 @@ These instructions will get you a copy of the app running on your phone for test
 * [EvoThings App](https://play.google.com/store/apps/details?id=com.evothings.evothingsviewer) - Mobile application used to connect with the SensorTag
 
 #### Optional
-These items are only required if your SensorTag does not have the original firmware on it. Please see the section called `Flashing SensorTag firmware` for more details.
+These items are only required if your SensorTag does not have the original firmware on it. Please see the section called `Installing CCS and BLE-STACK` and `Flashing SensorTag firmware` for more details.
 * [SensorTag DevPack](http://www.ti.com/tool/CC-DEVPACK-DEBUG) - used for debugging and flashing firmware on the SensorTag
 * [Code Composer Studio (CCS) v7.4.0](http://www.ti.com/tool/CCSTUDIO) - Used to load and develop SensorTag firmware
 * [BLE-STACK v2.2.1](http://www.ti.com/tool/BLE-STACK-ARCHIVE) - Bluetooth low energy tools
@@ -58,7 +58,8 @@ The differences of the structure to the blank EvoThings applications are the con
     └── index.html             # Heart of the application. Layout and functionality all configured here.
 
 
-## Installing CCS and BLE-STACK 
+## Installing CCS and BLE-STACK
+**Note**: Only required if SensorTag does not have the original firmware on it
 
 ### Windows (recommended)
 If your SensorTag no longer has the factory firmware loaded on it, you will have to reflash using the Code Composer Studio (CCS) which can be downloaded [here](http://www.ti.com/tool/CCSTUDIO). Choose `v7.4.0` and the off-line installer is recommended. Run the installer and choose all default options (including installation location) but for `Processor Support` please make sure you pick `SimpleLink CC13xx and CC26xx Wireless MCUs`.
@@ -119,6 +120,7 @@ Error message when testing connection: “An attempt to connect to the XDS110 fa
 Tried fixing by installing the VirtualBox Extension Pack and adding the USB device in the filter section. The problem still persisted. Relevant forum thread [here](https://stackoverflow.com/questions/26474687/failed-to-attach-the-usb-device-segger-j-link-0100-to-the-virtual-machine-wind) and [here](http://e2e.ti.com/support/wireless-connectivity/bluetooth/f/538/p/409253/1543581).
 
 ## Flashing SensorTag firmware
+**Note**: Only required if SensorTag does not have the original firmware on it
 
 ### Option 1 - Via CCS
 
