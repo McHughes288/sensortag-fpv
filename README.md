@@ -59,7 +59,7 @@ The differences of the structure to the blank EvoThings applications are the con
 
 
 ## Installing CCS and BLE-STACK
-**Note**: Only required if SensorTag does not have the original firmware on it
+**Note**: Only required if SensorTag does not have the original firmware on it.
 
 ### Windows (recommended)
 If your SensorTag no longer has the factory firmware loaded on it, you will have to reflash using the Code Composer Studio (CCS) which can be downloaded [here](http://www.ti.com/tool/CCSTUDIO). Choose `v7.4.0` and the off-line installer is recommended. Run the installer and choose all default options (including installation location) but for `Processor Support` please make sure you pick `SimpleLink CC13xx and CC26xx Wireless MCUs`.
@@ -70,10 +70,11 @@ Download BLE-STACK `v2.2.1` from [here](http://www.ti.com/tool/BLE-STACK-ARCHIVE
 It is highly recommend to use Windows instead of a Linux VM on a Mac. Everything works almost seamlessly. In addition, I ran into a driver problem as outlined below which meant I couldn't flash the SenorTag. 
 
 #### VirtualBox
-Install VirtualBox [here](https://www.virtualbox.org/wiki/Downloads)
+Install VirtualBox and extension pack [here](https://www.virtualbox.org/wiki/Downloads).
 * VirtualBox 5.2.22 (OS X hosts)
 * VirtualBox 5.2.22 Oracle VM VirtualBox Extension Pack (All supported platforms)
-Installed VM with Ubuntu image from [here](http://releases.ubuntu.com/16.04/)
+
+Installed VM with Ubuntu image from [here](http://releases.ubuntu.com/16.04/).
 * Image: `ubuntu-16.04.5-desktop-amd64.iso`
 * Default setup with minimum of 20gb storage
 
@@ -120,7 +121,7 @@ Error message when testing connection: “An attempt to connect to the XDS110 fa
 Tried fixing by installing the VirtualBox Extension Pack and adding the USB device in the filter section. The problem still persisted. Relevant forum thread [here](https://stackoverflow.com/questions/26474687/failed-to-attach-the-usb-device-segger-j-link-0100-to-the-virtual-machine-wind) and [here](http://e2e.ti.com/support/wireless-connectivity/bluetooth/f/538/p/409253/1543581).
 
 ## Flashing SensorTag firmware
-**Note**: Only required if SensorTag does not have the original firmware on it
+**Note**: Only required if SensorTag does not have the original firmware on it.
 
 ### Option 1 - Via CCS
 
@@ -145,7 +146,6 @@ An alternative option to get the factory firmware is to flash a hex file with TI
 ```
 ti/simplelink/ble_sdk_2_02_01_18/examples/hex/cc2650stk_sensortag_rel.hex
 ```
-
 
 ## Acknowledgments
 
