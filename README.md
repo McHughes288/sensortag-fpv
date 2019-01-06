@@ -3,11 +3,11 @@
 | Name: John Hughes | College: Pembroke | CRSID: jplh4 |
 | ----------------- | ----------------- | ------------ |
 
-App that analyses FPV drone freestyle with the TI SensorTag CC2650. This was my final project for the 4B25 Embedded Systems module at the University of Cambridge.
+App that analyses FPV drone freestyle with the TI SensorTag CC2650. This was my final project for the 4B25 Embedded Systems module at the University of Cambridge. See demo on YouTube [here](https://youtu.be/oyuBUCmCNJs).
 
 ## Getting Started
 
-These instructions will get you a copy of the app running on your phone for testing and development purposes. See demo on YouTube [here](https://youtu.be/oyuBUCmCNJs).
+These instructions will get you a copy of the app running on your phone for testing and development purposes. 
 
 ### Prerequisites
 
