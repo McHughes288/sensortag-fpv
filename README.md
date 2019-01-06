@@ -7,7 +7,7 @@ App that analyses FPV drone freestyle with the TI SensorTag CC2650. This was my 
 
 ## Getting Started
 
-These instructions will get you a copy of the app running on your phone for testing and development purposes.
+These instructions will get you a copy of the app running on your phone for testing and development purposes. See demo on YouTube [here](https://youtu.be/oyuBUCmCNJs).
 
 ### Prerequisites
 
